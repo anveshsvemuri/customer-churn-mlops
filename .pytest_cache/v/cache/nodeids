@@ -1,0 +1,8 @@
+[
+  "tests/test_api.py::test_health",
+  "tests/test_api.py::test_predict_requires_model",
+  "tests/test_pipeline.py::test_drift_detects_shift",
+  "tests/test_pipeline.py::test_generator_is_reproducible",
+  "tests/test_pipeline.py::test_training_prediction_and_artifacts",
+  "tests/test_pipeline.py::test_validation_rejects_missing_feature"
+]
