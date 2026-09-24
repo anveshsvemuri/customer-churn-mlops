@@ -10,11 +10,12 @@ A production-style, PII-free reference platform for telecom churn prediction. It
 flowchart LR
     A[Synthetic telecom data] --> B[Validation]
     B --> C[Deterministic training]
-    C --> D{ROC-AUC gate}
-    D -->|pass| E[Versioned artifacts]
-    E --> F[Batch scoring]
-    E --> G[FastAPI inference]
-    F --> H[Drift monitoring]
+    C --> D[MLflow experiment]
+    D --> E{ROC-AUC gate}
+    E -->|pass| F[Model registry version]
+    F --> G[Batch scoring]
+    F --> H[FastAPI inference]
+    G --> I[Drift monitoring]
 ```
 
 ## What this demonstrates
@@ -22,7 +23,8 @@ flowchart LR
 - Reproducible PII-free dataset generation
 - Explicit feature and target validation
 - Scikit-learn pipeline with deterministic split and evaluation
-- Promotion gate and JSON metrics artifact
+- MLflow experiment lineage for parameters, metrics, tags, and model artifacts
+- Promotion gate before optional model-registry version creation
 - Batch prediction and lightweight drift monitoring
 - Validated FastAPI request/response contracts
 - Docker packaging and GitHub Actions quality gates
@@ -53,10 +55,28 @@ curl -X POST http://localhost:8000/predict -H 'content-type: application/json' -
 
 Generated datasets and model artifacts are intentionally excluded from Git. Run `make train` before building the Docker image.
 
+## Track and register a model
+
+MLflow is optional so the core API image stays small. A local SQLite backend gives
+reproducible experiment history and registry support:
+
+```bash
+pip install -e '.[dev,tracking]'
+churn-mlops train \
+  --tracking-uri sqlite:///mlflow.db \
+  --experiment-name telecom-churn \
+  --registered-model-name telecom-churn
+mlflow ui --backend-store-uri sqlite:///mlflow.db
+```
+
+The CLI validates the ROC-AUC promotion gate before it calls the tracker. Each run
+records the seed, row count, feature contract, decision threshold, evaluation
+metrics, PII classification, and serialized pipeline. Supplying a registered model
+name creates a new model version only for a candidate that passed the gate. Local
+MLflow databases and run artifacts are ignored by Git.
+
 ## Roadmap
 
-- MLflow experiment tracking and registry adapter
 - Evidently monitoring report and delayed-label evaluation
 - Cloud object storage and Terraform deployment module
 - Grounded retention-strategy copilot powered by the separate Data Platform Copilot project
-

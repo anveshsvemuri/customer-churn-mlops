@@ -6,4 +6,5 @@ artifacts/
 data/generated/
 *.pyc
 .env
-
+mlruns/
+mlflow.db

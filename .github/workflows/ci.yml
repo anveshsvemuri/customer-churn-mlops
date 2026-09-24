@@ -11,8 +11,8 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install -e '.[dev]'
+      - run: pip install -e '.[dev,tracking]'
       - run: ruff check .
       - run: pytest -q
       - run: churn-mlops train --rows 1000 --output /tmp/churn-artifacts
-
+      - run: churn-mlops train --rows 1000 --output /tmp/tracked-artifacts --tracking-uri sqlite:////tmp/mlflow.db
