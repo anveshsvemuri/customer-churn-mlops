@@ -3,24 +3,46 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import pandas as pd
+
 from .data import generate_customers
 from .model import promote, save_artifacts, train
+from .monitoring import create_drift_report, save_drift_report
 from .tracking import track_training
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train the reproducible churn model")
-    parser.add_argument("command", choices=["train"])
-    parser.add_argument("--rows", type=int, default=2000)
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--output", type=Path, default=Path("artifacts"))
-    parser.add_argument("--tracking-uri", help="MLflow URI, for example sqlite:///mlflow.db")
-    parser.add_argument("--experiment-name", default="telecom-churn")
-    parser.add_argument(
+    parser = argparse.ArgumentParser(description="Operate the reproducible churn platform")
+    commands = parser.add_subparsers(dest="command", required=True)
+    training = commands.add_parser("train", help="Train and optionally track a model")
+    training.add_argument("--rows", type=int, default=2000)
+    training.add_argument("--seed", type=int, default=42)
+    training.add_argument("--output", type=Path, default=Path("artifacts"))
+    training.add_argument("--tracking-uri", help="MLflow URI, for example sqlite:///mlflow.db")
+    training.add_argument("--experiment-name", default="telecom-churn")
+    training.add_argument(
         "--registered-model-name",
         help="Create a model version after the promotion gate passes (requires --tracking-uri)",
     )
+    monitoring = commands.add_parser("monitor", help="Compare current features with a reference")
+    monitoring.add_argument("--reference", type=Path, required=True)
+    monitoring.add_argument("--current", type=Path, required=True)
+    monitoring.add_argument("--output", type=Path, default=Path("artifacts/drift-report.json"))
+    monitoring.add_argument("--threshold", type=float, default=0.25)
+    monitoring.add_argument("--fail-on-drift", action="store_true")
     args = parser.parse_args()
+    if args.command == "monitor":
+        report = create_drift_report(
+            pd.read_csv(args.reference), pd.read_csv(args.current), args.threshold
+        )
+        save_drift_report(report, args.output)
+        print(
+            f"monitor status={report.status} drifted_features={report.drifted_features} "
+            f"output={args.output}"
+        )
+        if args.fail_on_drift and report.status == "alert":
+            raise SystemExit(2)
+        return
     if args.registered_model_name and not args.tracking_uri:
         parser.error("--registered-model-name requires --tracking-uri")
     frame = generate_customers(args.rows, args.seed)

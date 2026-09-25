@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "reference_rows": 1000,
+  "current_rows": 1000,
+  "threshold": 0.25,
+  "status": "alert",
+  "drifted_features": 1,
+  "features": [
+    {
+      "feature": "tenure_months",
+      "psi": 0.0102,
+      "mean_shift": 0.0037,
+      "severity": "stable",
+      "drifted": false
+    },
+    {
+      "feature": "monthly_charges",
+      "psi": 6.36,
+      "mean_shift": 2.003,
+      "severity": "significant",
+      "drifted": true
+    },
+    {
+      "feature": "support_tickets",
+      "psi": 0.0096,
+      "mean_shift": 0.0152,
+      "severity": "stable",
+      "drifted": false
+    },
+    {
+      "feature": "contract_months",
+      "psi": 0.0057,
+      "mean_shift": 0.0717,
+      "severity": "stable",
+      "drifted": false
+    },
+    {
+      "feature": "autopay",
+      "psi": 0.0,
+      "mean_shift": 0.0062,
+      "severity": "stable",
+      "drifted": false
+    },
+    {
+      "feature": "streaming_services",
+      "psi": 0.0083,
+      "mean_shift": 0.0906,
+      "severity": "stable",
+      "drifted": false
+    }
+  ]
+}

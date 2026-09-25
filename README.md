@@ -25,7 +25,7 @@ flowchart LR
 - Scikit-learn pipeline with deterministic split and evaluation
 - MLflow experiment lineage for parameters, metrics, tags, and model artifacts
 - Promotion gate before optional model-registry version creation
-- Batch prediction and lightweight drift monitoring
+- Batch prediction and PSI-based feature-drift monitoring
 - Validated FastAPI request/response contracts
 - Docker packaging and GitHub Actions quality gates
 - Responsible-use model card
@@ -75,8 +75,30 @@ metrics, PII classification, and serialized pipeline. Supplying a registered mod
 name creates a new model version only for a candidate that passed the gate. Local
 MLflow databases and run artifacts are ignored by Git.
 
+## Monitor feature drift
+
+The monitoring command compares an approved reference dataset with a current batch,
+then writes an aggregate-only JSON report. It combines population stability index
+(PSI), standardized mean shift, severity labels, and an overall deployment signal:
+
+```bash
+churn-mlops monitor \
+  --reference data/reference.csv \
+  --current data/current.csv \
+  --output artifacts/drift-report.json \
+  --threshold 0.25 \
+  --fail-on-drift
+```
+
+PSI below `0.10` is labeled stable, `0.10–0.25` moderate, and `0.25` or above
+significant. `--fail-on-drift` returns exit code 2 when any feature crosses the
+configured threshold, allowing the command to gate scheduled scoring or retraining
+workflows. Reports contain only feature-level aggregates—never customer rows or PII.
+See the committed [sample drift report](docs/sample-drift-report.json) for a verified
+1,000-row demonstration with a simulated billing-distribution shift.
+
 ## Roadmap
 
-- Evidently monitoring report and delayed-label evaluation
+- Delayed-label performance evaluation and monitoring dashboard
 - Cloud object storage and Terraform deployment module
 - Grounded retention-strategy copilot powered by the separate Data Platform Copilot project
