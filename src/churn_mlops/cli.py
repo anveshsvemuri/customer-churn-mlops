@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from .batch import score_csv
 from .data import generate_customers
 from .model import promote, save_artifacts, train
 from .monitoring import create_drift_report, save_drift_report
@@ -30,7 +31,28 @@ def main() -> None:
     monitoring.add_argument("--output", type=Path, default=Path("artifacts/drift-report.json"))
     monitoring.add_argument("--threshold", type=float, default=0.25)
     monitoring.add_argument("--fail-on-drift", action="store_true")
+    scoring = commands.add_parser("score", help="Score a CSV with bounded memory")
+    scoring.add_argument("--model", type=Path, required=True)
+    scoring.add_argument("--input", type=Path, required=True)
+    scoring.add_argument("--output", type=Path, required=True)
+    scoring.add_argument("--manifest", type=Path, required=True)
+    scoring.add_argument("--threshold", type=float, default=0.5)
+    scoring.add_argument("--batch-size", type=int, default=10_000)
     args = parser.parse_args()
+    if args.command == "score":
+        manifest = score_csv(
+            args.model,
+            args.input,
+            args.output,
+            args.manifest,
+            threshold=args.threshold,
+            batch_size=args.batch_size,
+        )
+        print(
+            f"scored rows={manifest.rows_scored} churners={manifest.predicted_churners} "
+            f"output={args.output} manifest={args.manifest}"
+        )
+        return
     if args.command == "monitor":
         report = create_drift_report(
             pd.read_csv(args.reference), pd.read_csv(args.current), args.threshold

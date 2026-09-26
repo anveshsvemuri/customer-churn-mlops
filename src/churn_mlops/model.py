@@ -60,10 +60,11 @@ def load_model(path: Path) -> Pipeline:
     return joblib.load(path)
 
 
-def predict(model: Pipeline, frame: pd.DataFrame) -> pd.DataFrame:
+def predict(model: Pipeline, frame: pd.DataFrame, threshold: float = 0.5) -> pd.DataFrame:
+    if not 0 <= threshold <= 1:
+        raise ValueError("threshold must be between 0 and 1")
     validate_frame(frame, require_target=False)
     result = frame.copy()
     result["churn_probability"] = model.predict_proba(frame[FEATURES])[:, 1].round(4)
-    result["churn_prediction"] = (result["churn_probability"] >= 0.5).astype(int)
+    result["churn_prediction"] = (result["churn_probability"] >= threshold).astype(int)
     return result
-

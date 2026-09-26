@@ -25,7 +25,8 @@ flowchart LR
 - Scikit-learn pipeline with deterministic split and evaluation
 - MLflow experiment lineage for parameters, metrics, tags, and model artifacts
 - Promotion gate before optional model-registry version creation
-- Batch prediction and PSI-based feature-drift monitoring
+- Bounded-memory batch prediction with privacy-safe outputs and lineage manifests
+- PSI-based feature-drift monitoring
 - Validated FastAPI request/response contracts
 - Docker packaging and GitHub Actions quality gates
 - Responsible-use model card
@@ -74,6 +75,26 @@ records the seed, row count, feature contract, decision threshold, evaluation
 metrics, PII classification, and serialized pipeline. Supplying a registered model
 name creates a new model version only for a candidate that passed the gate. Local
 MLflow databases and run artifacts are ignored by Git.
+
+## Run batch inference
+
+Score arbitrarily large CSV inputs in bounded chunks after training a model:
+
+```bash
+churn-mlops score \
+  --model artifacts/model.joblib \
+  --input data/current.csv \
+  --output artifacts/predictions.csv \
+  --manifest artifacts/batch-manifest.json \
+  --batch-size 10000 \
+  --threshold 0.5
+```
+
+The scorer validates every chunk and writes its output atomically. To limit data
+exposure, it emits only `customer_id` (when supplied), churn probability, and the
+binary decision—never arbitrary source columns. The aggregate-only manifest records
+input and model SHA-256 hashes, row counts, decision statistics, output schema, and
+the threshold so every delivery can be traced to exact inputs without storing PII.
 
 ## Monitor feature drift
 

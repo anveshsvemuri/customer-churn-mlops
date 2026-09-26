@@ -15,4 +15,7 @@ jobs:
       - run: ruff check .
       - run: pytest -q
       - run: churn-mlops train --rows 1000 --output /tmp/churn-artifacts
+      - run: |
+          python -c "from churn_mlops.data import generate_customers; generate_customers(100, 7).drop(columns=['churned']).to_csv('/tmp/current.csv', index=False)"
+          churn-mlops score --model /tmp/churn-artifacts/model.joblib --input /tmp/current.csv --output /tmp/predictions.csv --manifest /tmp/batch-manifest.json --batch-size 25
       - run: churn-mlops train --rows 1000 --output /tmp/tracked-artifacts --tracking-uri sqlite:////tmp/mlflow.db
